@@ -71,8 +71,6 @@ table(dados_sinasc_2$KOTELCHUCK)
 # veja o dicionário do SINASC para identificar qual o código das categorias de cada variável
 
 
-# Tarefa 6. Atribuir legendas para as categorias das variáveis investigadas na etapa 4.
-library(dplyr)
 
 dados_sinasc_2 <- dados_sinasc_2 %>%
   mutate(ESTCIVMAE = na_if(ESTCIVMAE, 9),
@@ -84,7 +82,7 @@ dados_sinasc_2 <- dados_sinasc_2 %>%
          KOTELCHUCK = na_if(KOTELCHUCK, 9),
          TPROBSON = na_if(TPROBSON, 11)
          )
-
+str(dados_sim_2$SEXO)
 # Tarefa 6. Atribuir legendas para as categorias das variáveis investigadas na etapa 4.
 
 dados_sinasc_2$LOCNASC <- factor(dados_sinasc_2$LOCNASC, levels = c(1,2,3,4,5), labels = c("Hospital","Outros estabelecimentos de saúde","Domicílio","Outros","Aldeia indígena"))
@@ -479,6 +477,333 @@ dados_sim_1=subset(dados_sim, select =c(1, 3, 4, 8, 9, 10, 11, 14, 17, 35, 36, 3
 #tarefa 3
 dados_sim_2=dados_sim_1[substr(as.character(dados_sim_1$CODMUNRES),1,2)=="50",]
 write.csv2(dados_sim_2, file = "dados_sim_2.csv",row.names = F)
+
+#tarefa 4
+
+table(dados_sim_2$TIPOBITO)
+table(dados_sim_2$SEXO)
+table(dados_sim_2$RACACOR)
+table(dados_sim_2$TPMORTEOCO)
+table(dados_sim_2$OBITOGRAV)
+table(dados_sim_2$OBITOPUERP)
+table(dados_sim_2$CAUSABAS)
+table(dados_sim_2$TPOBITOCOR)
+table(dados_sim_2$MORTEPARTO)
+
+
+#tarefa 5
+library(dplyr)
+dados_sim_2<-dados_sim_2 %>%
+  mutate(IDADE = na_if(IDADE,9),
+         SEXO = ifelse(SEXO %in% c(0,9),NA,SEXO),
+         ESC2010 = na_if(ESC2010, 9),
+         TPOBITOCOR = na_if(TPOBITOCOR, 9),
+         OBITOGRAV = na_if(OBITOGRAV, 9),
+         OBITOPUERP = na_if(OBITOPUERP,9),
+         MORTEPARTO = na_if(MORTEPARTO,9),
+         TPMORTEOCO = na_if(TPMORTEOCO,9)
+  )
+
+seguro<-dados_sim_2
+#tarefa 6
+
+dados_sim_2$TIPOBITO = factor(
+  dados_sim_2$TIPOBITO,
+  levels = c(1,2),
+  labels = c("Fetal","Não fetal")
+)
+
+dados_sim_2$SEXO = factor(
+  dados_sim_2$SEXO,
+  levels = c(1,2),
+  labels = c("Masculino","Feminino")
+)
+
+dados_sim_2$RACACOR = factor(
+  dados_sim_2$RACACOR,
+  levels = c(1,2,3,4,5),
+  labels = c("Branca","Preta","Amarela","Parda","Indígena")
+)
+
+dados_sim_2$ESC2010 = factor(
+  dados_sim_2$ESC2010,
+  levels = c(0,1,2,3,4,5),
+  labels = c(
+    "Sem escolaridade",
+    "Fundamental I",
+    "Fundamental II",
+    "Médio",
+    "Superior incompleto",
+    "Superior completo"
+  )
+)
+
+dados_sim_2$TPMORTEOCO = factor(
+  dados_sim_2$TPMORTEOCO,
+  levels = c(1,2,3,4,5,8),
+  labels = c(
+    "Na gravidez",
+    "No parto",
+    "No abortamento",
+    "Até 42 dias após o parto",
+    "De 43 dias a 1 ano após o parto",
+    "Não ocorreu nestes períodos"
+  )
+)
+
+dados_sim_2$OBITOGRAV = factor(
+  dados_sim_2$OBITOGRAV,
+  levels = c(1,2),
+  labels = c("Sim","Não")
+)
+
+dados_sim_2$OBITOPUERP = factor(
+  dados_sim_2$OBITOPUERP,
+  levels = c(1,2,3),
+  labels = c(
+    "Sim até 42 dias após o parto",
+    "Sim de 43 dias a 1 ano",
+    "Não"
+  )
+)
+
+dados_sim_2$MORTEPARTO = factor(
+  dados_sim_2$MORTEPARTO,
+  levels = c(1,2,3),
+  labels = c("Antes","Durante","Após")
+)
+
+dados_sim_2$TPOBITOCOR = factor(
+  dados_sim_2$TPOBITOCOR,
+  levels = c(1,2,3,4,5,6,7,8,9),
+  labels = c(
+    "Durante a gestação",
+    "Durante o abortamento",
+    "Após o abortamento",
+    "No parto ou até 1 hora após o parto",
+    "No puerpério até 42 dias após o parto",
+    "Entre 43 dias e até 1 ano após o parto",
+    "A investigação não identificou o momento do óbito",
+    "Mais de um ano após o parto",
+    "O óbito não ocorreu nas circunstâncias anteriores"
+  )
+)
+
+
+
+
+
+#tarefa 7
+
+#BASE:
+base = data.frame(CODMUNRES = sort(unique(dados_sim_2$CODMUNRES)))
+
+#ANO:
+base = cbind(ANO = 2015, base)
+
+#TOTAL DE ÓBITOS:
+TO = as.data.frame(table(factor(dados_sim_2$CODMUNRES,
+                                levels = base$CODMUNRES)))
+names(TO) = c("CODMUNRES","TO")
+base = merge(base, TO, by = "CODMUNRES", all.x = TRUE)
+
+#ÓBITOS FETAIS E NÃO FETAIS:
+tab_tipo = table(
+  dados_sim_2$CODMUNRES,
+  dados_sim_2$TIPOBITO
+)
+
+df_tipo = as.data.frame.matrix(tab_tipo)
+
+names(df_tipo) = c("TO_FT","TO_NFT")
+
+df_tipo$CODMUNRES = rownames(df_tipo)
+
+base = merge(base, df_tipo,
+             by = "CODMUNRES", all.x = TRUE)
+
+#ÓBITOS POR SEXO:
+tab_sexo = table(
+  dados_sim_2$CODMUNRES,
+  dados_sim_2$SEXO
+)
+
+df_sexo = as.data.frame.matrix(tab_sexo)
+
+names(df_sexo) = c("TO_M","TO_F")
+
+df_sexo$CODMUNRES = rownames(df_sexo)
+
+base = merge(base, df_sexo,
+             by = "CODMUNRES", all.x = TRUE)
+
+#ÓBITOS NEONATAIS:
+neo = dados_sim_2[
+  (
+    dados_sim_2$IDADE <= 123 |
+      (dados_sim_2$IDADE >= 200 &
+         dados_sim_2$IDADE <= 227)
+  )
+  &
+    dados_sim_2$TIPOBITO == "Não fetal",
+]
+
+TON = as.data.frame(
+  table(
+    factor(neo$CODMUNRES,
+           levels = base$CODMUNRES)
+  )
+)
+
+names(TON) = c("CODMUNRES","TON")
+
+base = merge(base, TON,
+             by = "CODMUNRES", all.x = TRUE)
+
+#ÓBITOS NEONATAIS POR RAÇA/COR:
+tab_raca = table(
+  neo$CODMUNRES,
+  neo$RACACOR
+)
+
+df_raca = as.data.frame.matrix(tab_raca)
+
+names(df_raca) = c(
+  "TON_B",
+  "TON_PT",
+  "TON_A",
+  "TON_PD",
+  "TON_I"
+)
+
+df_raca$CODMUNRES = rownames(df_raca)
+
+base = merge(base, df_raca,
+             by = "CODMUNRES", all.x = TRUE)
+
+#ÓBITOS MATERNOS:
+materno = dados_sim_2[
+  dados_sim_2$TPMORTEOCO !=
+    "Não ocorreu nestes períodos",
+]
+
+TOM = as.data.frame(
+  table(
+    factor(materno$CODMUNRES,
+           levels = base$CODMUNRES)
+  )
+)
+
+names(TOM) = c("CODMUNRES","TOM")
+
+base = merge(base, TOM,
+             by = "CODMUNRES", all.x = TRUE)
+
+#ÓBITOS MATERNOS POR ESCOLARIDADE:
+tab_esc = table(
+  materno$CODMUNRES,
+  materno$ESC2010
+)
+
+df_esc = as.data.frame.matrix(tab_esc)
+
+names(df_esc) = c(
+  "TOM_SE",
+  "TOM_FI",
+  "TOM_FII",
+  "TOM_M",
+  "TOM_SI",
+  "TOM_SC"
+)
+
+df_esc$CODMUNRES = rownames(df_esc)
+
+base = merge(base, df_esc,
+             by = "CODMUNRES", all.x = TRUE)
+
+#ÓBITOS MATERNOS POR FAIXA ETÁRIA:
+materno$FX_IDADE = ifelse(
+  materno$IDADE >= 415 &
+    materno$IDADE <= 449,
+  "15_49",
+  "OUTRAS"
+)
+
+tab_fx = table(
+  materno$CODMUNRES,
+  materno$FX_IDADE
+)
+
+df_fx = as.data.frame.matrix(tab_fx)
+
+if(!"15_49" %in% colnames(df_fx)){
+  df_fx$`15_49` = 0
+}
+
+if(!"OUTRAS" %in% colnames(df_fx)){
+  df_fx$OUTRAS = 0
+}
+
+names(df_fx) = c("TOM_15_49","TOM_OUTRAS")
+
+df_fx$CODMUNRES = rownames(df_fx)
+
+base = merge(base, df_fx,
+             by = "CODMUNRES", all.x = TRUE)
+
+#SUBSTITUIR NA POR 0:
+cols_contagem = setdiff(
+  names(base),
+  c("CODMUNRES","ANO")
+)
+
+base[cols_contagem][is.na(base[cols_contagem])] = 0
+
+#LINHA UF:
+linha_estado = base[1,]
+
+linha_estado[,] = NA
+
+cols_contagem = setdiff(
+  names(base),
+  c("CODMUNRES","ANO")
+)
+
+linha_estado[cols_contagem] =
+  sapply(base[cols_contagem],
+         function(x) sum(x, na.rm = TRUE))
+
+linha_estado$CODMUNRES = 50
+
+SIM_MS = rbind(linha_estado, base)
+
+SIM_MS$NIVEL =
+  c("MS",
+    rep("MUNICIPIO",
+        nrow(SIM_MS)-1))
+
+SIM_MS$ANO = 2015
+
+#ORGANIZAR COLUNAS:
+SIM_MS = SIM_MS[,c(
+  "ANO",
+  "NIVEL",
+  "CODMUNRES",
+  names(SIM_MS)[
+    !names(SIM_MS) %in%
+      c("ANO","NIVEL","CODMUNRES")
+  ]
+)]
+
+
+write.csv(
+  SIM_MS,
+  "SIM_MS.csv",
+  row.names = FALSE
+)
+
+
+
 #####################################################
 # ETAPA 3: OUTROS BANCOS DE DADOS: IBGE, SNIS, ...
 #####################################################
