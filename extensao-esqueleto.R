@@ -69,7 +69,7 @@ table(dados_sinasc_2$KOTELCHUCK)
 # Tarefa 5. Atribuir para cada variável de dados_sinasc_2 como sendo NA a categoria de "Não informado ou Ignorado", geralmente com código 9
 # KOTELCHUCK = 9 significa "não informado"   TPROBSON = 11 significa "não classificado por falta de informação"
 # veja o dicionário do SINASC para identificar qual o código das categorias de cada variável
-
+library(dplyr)
 
 
 dados_sinasc_2 <- dados_sinasc_2 %>%
@@ -82,7 +82,6 @@ dados_sinasc_2 <- dados_sinasc_2 %>%
          KOTELCHUCK = na_if(KOTELCHUCK, 9),
          TPROBSON = na_if(TPROBSON, 11)
          )
-str(dados_sim_2$SEXO)
 # Tarefa 6. Atribuir legendas para as categorias das variáveis investigadas na etapa 4.
 
 dados_sinasc_2$LOCNASC <- factor(dados_sinasc_2$LOCNASC, levels = c(1,2,3,4,5), labels = c("Hospital","Outros estabelecimentos de saúde","Domicílio","Outros","Aldeia indígena"))
@@ -808,10 +807,239 @@ write.csv(
 # ETAPA 3: OUTROS BANCOS DE DADOS: IBGE, SNIS, ...
 #####################################################
 # Só inicie esta Etapa quando a professora orientar
-# ESTANDO NA BRANCH SINASC, NÃO ALTERE NADA NO SCRIPT REFERENTE A ETAPA 3
+# Ao terminar a ETAPA 2 faça um merge de SIM para main
+# Altere as orientações do script e commit (em main) "Script com orientações ETAPA 3 - SIDRA"
+# Abra um branch OUTROS
+# Na branch OUTROS escreva os comandos da Tarefa 1 abaixo
 
-# Tarefa 1. Acesso aos bancos de dados e obtenção da informação
+# Tarefa 1. Acesso aos bancos de dados do SIDRA e obtenção da informação
+# Leia os arquivos:
+# 1. população residente estimada - UF e municípios - 2015 - SIDRA - tabela_6579.csv  
+# 2. população residente censo 2010 - UF e municípios - total e por sexo - SIDRA - tabela_1552.csv  
+# 3. população residente censo 2010 - por faixa etária -  UF - SIDRA - tabela_1552.csv
+# 4. população residente censo 2010 - por faixa etária e sexo -  municípios - SIDRA - tabela_1552.csv
 
+sidra_2015<-read.csv2('população residente estimada - UF e municípios - 2015 - SIDRA - tabela_6579.csv', head = T, sep = ';') 
+sidra_2015<-sidra_2015[substr(as.character(sidra_2015$CODMUNRES),1,2)=="50",]
+
+
+sidraSEX_2010<-read.csv2('população residente censo 2010 - UF e municípios - total e por sexo - SIDRA - tabela_1552.csv', header = T, sep = ';')
+sidraSEX_2010<-sidraSEX_2010[substr(as.character(sidraSEX_2010$CODMUNRES),1,2)=="50",]
+
+sidraFE_2010<-read.csv("população residente censo 2010 - por faixa etária - UF - SIDRA - tabela_1552.csv", header = T, sep = ';')
+sidraFE_2010<-sidraFE_2010[substr(as.character(sidraFE_2010$CODMUNRES),1,2)=="50",]
+
+sidraFESEX_2010<-read.csv('população residente censo 2010 - por faixa etária e sexo - municípios - SIDRA - tabela_1552.csv',header = T,sep = ';')
+sidraFESEX_2010<-sidraFESEX_2010[substr(as.character(sidraFESEX_2010$CODMUNRES),1,2)=="50",]
+
+
+# A partir dos arquivos acima gere o banco de dados de nome SIDRA_UF com as seguintes variáveis:
+# 1  ANO    
+SIDRA_MS<-sidra_2015
+SIDRA_MS$ANO<-2015
+SIDRA_MS<-SIDRA_MS %>%
+  relocate(ANO)
+
+
+# 2  NIVEL
+
+SIDRA_MS$NIVEL<-ifelse(SIDRA_MS$CODMUNRES==50, 'UF','MUNICIPIO')
+SIDRA_MS <- SIDRA_MS %>%
+  relocate(NIVEL, .after = ANO)
+
+
+# 3  CODMUNRES
+# 4 POPRE_T
+# 5 POPRC_T
+SIDRA_MS <- left_join(
+  SIDRA_MS,
+  sidraSEX_2010[, c("CODMUNRES", "POPRC_T","POPRC_M","POPRC_F")],
+  by = "CODMUNRES"
+)
+
+# 6 POPRC_M
+# 7 POPRC_F
+# 8 POPRC_15
+idade_total <- bind_rows(
+  sidraFE_2010,
+  sidraFESEX_2010
+)
+
+
+POPRC_15_temp <- idade_total %>%
+  
+  filter(
+    F_IDADE %in% c(
+      "0 a 4 anos",
+      "5 a 9 anos",
+      "10 a 14 anos"
+    )
+  ) %>%
+  
+  group_by(CODMUNRES) %>%
+  
+  summarise(
+    POPRC_15 = sum(POP)
+  )
+
+SIDRA_MS <- left_join(
+  SIDRA_MS,
+  POPRC_15_temp,
+  by = "CODMUNRES"
+)
+
+
+# 9 POPRC_15_49
+
+
+POPRC_49_temp <- idade_total %>%
+  
+  filter(
+    F_IDADE %in% c(
+      "15 a 19 anos",
+      "20 a 24 anos",
+      '25 a 29 anos',
+      '30 a 34 anos',
+      '35 a 39 anos',
+      '40 a 44 anos',
+      '45 a 49 anos'
+    )
+  ) %>%
+  
+  group_by(CODMUNRES) %>%
+  
+  summarise(
+    POPRC_15_49 = sum(POP)
+  )
+
+SIDRA_MS <- left_join(
+  SIDRA_MS,
+  POPRC_49_temp,
+  by = "CODMUNRES"
+)
+
+
+# 10 POPRC_50
+
+POPRC_50_temp <- idade_total %>%
+  
+  filter(
+    F_IDADE %in% c(
+      "50 a 54 anos",
+      "55 a 59 anos",
+      '60 a 64 anos',
+      '65 a 69 anos',
+      '70 a 74 anos',
+      '75 a 79 anos',
+      '80 a 89 anos',
+      '90 a 99 anos',
+      '100 anos ou mais'
+    )
+  ) %>%
+  
+  group_by(CODMUNRES) %>%
+  
+  summarise(
+    POPRC_50 = sum(POP)
+  )
+
+SIDRA_MS <- left_join(
+  SIDRA_MS,
+  POPRC_50_temp,
+  by = "CODMUNRES"
+)
+
+
+# 11 POPRC_F_15
+POPRC_F_15_temp <- idade_total %>%
+  
+  filter(
+    F_IDADE %in% c(
+      "0 a 4 anos",
+      "5 a 9 anos",
+      "10 a 14 anos"
+    )
+  ) %>%
+  
+  group_by(CODMUNRES) %>%
+  
+  summarise(
+    POPRC_F_15 = sum(POPF)
+  )
+
+SIDRA_MS <- left_join(
+  SIDRA_MS,
+  POPRC_F_15_temp,
+  by = "CODMUNRES"
+)
+
+
+# 12 POPRC_F_15_49
+POPRC_F_49_temp <- idade_total %>%
+  
+  filter(
+    F_IDADE %in% c(
+      "15 a 19 anos",
+      "20 a 24 anos",
+      '25 a 29 anos',
+      '30 a 34 anos',
+      '35 a 39 anos',
+      '40 a 44 anos',
+      '45 a 49 anos'
+    )
+  ) %>%
+  
+  group_by(CODMUNRES) %>%
+  
+  summarise(
+    POPRC_F_15_49 = sum(POPF)
+  )
+
+SIDRA_MS <- left_join(
+  SIDRA_MS,
+  POPRC_F_49_temp,
+  by = "CODMUNRES"
+)
+
+
+# 13 POPRC_F_50
+POPRC_F_50_temp <- idade_total %>%
+  
+  filter(
+    F_IDADE %in% c(
+      "50 a 54 anos",
+      "55 a 59 anos",
+      '60 a 64 anos',
+      '65 a 69 anos',
+      '70 a 74 anos',
+      '75 a 79 anos',
+      '80 a 89 anos',
+      '90 a 99 anos',
+      '100 anos ou mais'
+    )
+  ) %>%
+  
+  group_by(CODMUNRES) %>%
+  
+  summarise(
+    POPRC_F_50 = sum(POPF)
+  )
+
+SIDRA_MS <- left_join(
+  SIDRA_MS,
+  POPRC_F_50_temp,
+  by = "CODMUNRES"
+)
+
+
+
+SIDRA_MS <- SIDRA_MS %>%
+  select(-NOME)
+
+
+# Exporte o arquivo em formato CSV
+write.csv(SIDRA_MS,'SIDRA_MS.csv',row.names = F)
+# Faça o commit com a mensagem "Script e dados TAREFA 3 - SIDRA"
 
 
 #####################################################################################################
