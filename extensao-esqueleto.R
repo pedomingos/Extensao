@@ -1063,6 +1063,39 @@ SIDRA_MS <- SIDRA_MS %>%
 write.csv(SIDRA_MS,'SIDRA_MS.csv',row.names = F)
 # Faça o commit com a mensagem "Script e dados TAREFA 3 - SIDRA"
 
+# Tarefa 2: Acesso aos bancos de dados do SINISA e obtenção da informação
+# Escreva os comandos da Tarefa 2 estando na branch OUTROS# Leia o arquivo agua e esgoto - município - 2015.csv 
+san2015<-read.csv("agua e esgoto - município - 2015.csv",header = T,sep = ';')
+san2015<-san2015[substr(as.character(san2015$CODMUNRES),1,2)=="50",]
+table(san2015$POPR_RE)
+
+# A partir do arquivo acima gere o banco de dados de nome SINISA_UF com as seguintes variáveis:
+base = data.frame(CODMUNRES=sort(unique(san2015$CODMUNRES)))
+# 1  ANO    
+# 2  NIVEL
+# 3  CODMUNRES
+# 4 POPR_RA
+base$POPR_RA = san2015$POPR_RA
+# 5 POPR_RE
+base$POPR_RE = san2015$POPR_RE
+base$NIVEL='MUNICIPIO'
+base$ANO=2015
+
+soma_popra = sum(as.numeric(base$POPR_RA), na.rm=T)
+somare<-sum(as.numeric(base$POPR_RE),na.rm = T)
+
+linha= data.frame(ANO=2015,NIVEL='UF',CODMUNRES=50,POPR_RA=soma_popra,POPR_RE=somare)
+
+base<-base[, c("ANO",'NIVEL',"CODMUNRES","POPR_RA","POPR_RE")]
+base<-rbind(linha,base)
+# Exporte o arquivo em formato CSV
+# Faça o commit com a mensagem "Script e dados TAREFA 3 - SINISA"
+write.csv(base,"SINISA_MS",row.names = F)
+
+
+
+
+
 
 # Tarefa 2: Acesso aos bancos de dados do SINISA e obtenção da informação
 # Escreva os comandos da Tarefa 2 estando na branch OUTROS# Leia o arquivo agua e esgoto - município - 2015.csv 
