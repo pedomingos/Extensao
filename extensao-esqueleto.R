@@ -1271,6 +1271,20 @@ sapply(lista_bancos, function(df) {
 
 
 # Tarefa 2: Acrescentar no banco DA_UF os indicadores TFG, TMG, RMM, TMM, TMM_P, TMN, TMN_P, TMN_T e TMI e chamar o banco de BDEM_UF_2015
+DA_MS$TFG<-(DA_MS$TN / DA_MS$POPRC_F_15_49)*1000
+DA_MS$TMG<-(DA_MS$TO / DA_MS$POBRE_T)*1000
+DA_MS$RMM<-(DA_MS$TO_MT / DA_MS$TN)*100000
+DA_MS$TMM<-(DA_MS$TO_MT / DA_MS$POPRC_F_15_49)*100000
+DA_MS$TMM_P<-(DA_MS$TO_MT_P / DA_MS$POPRC_F_15_49)*100000
+DA_MS$TMN<-(DA_MS$TO_NT / DA_MS$TN)*1000
+DA_MS$TMN_P<-(DA_MS$TO_NT_P / DA_MS$TN)*1000
+DA_MS$TMN_T<-(DA_MS$TO_NT_T / DA_MS$TN)*1000
+DA_MS$TMI<-((DA_MS$TO_NT + DA_MS$TO_PNT)/DA_MS$TN)*1000
+
+BDEM_MS_2015<-DA_MS
+
+write.csv(BDEM_MS_2015,"BDEM_MS_2015.csv",row.names = F)
+
 
 # Após a criação do banco, fazer commit “Script e dados BDEM_UF_2015”
 
