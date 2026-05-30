@@ -1092,8 +1092,82 @@ base<-rbind(linha,base)
 # Faça o commit com a mensagem "Script e dados TAREFA 3 - SINISA"
 write.csv(base,"SINISA_MS",row.names = F)
 
+# Tarefa 3: Acesso aos bancos de dados do ATLAS  e obtenção da informação
+# Escreva os comandos da Tarefa 3 estando na branch OUTROS
+# Leia os arquivos:
+# 1. códigos dos municípios - 2010.csv  
+cod2010<-read.csv('códigos dos municípios - 2010.csv',header = T,sep = ';')
+cod2010<-cod2010[substr(as.character(cod2010$CODMUNRES),1,2)=="50",]
+library(dplyr)
+cod2010 <- cod2010 %>%
+  select(-X)
+# 2. IDHM - 2010 (CENSO) e 2015 (PNAD) - total e por sexo - UF - Atlas Brasil.csv
+id201015<-read.csv("IDHM - 2010 (CENSO) e 2015 (PNAD) - total e por sexo - UF - Atlas Brasil.csv",header = T,sep=';')
+id201015<- id201015[12,]
+install.packages('janitor')
+library(janitor)
+library(readr)
+id201015 <- remove_empty(id201015, which = "cols")
 
 
+
+
+# 3. IDHM - 2010 - municípios - Atlas Brasil.csv
+idhm2010<-read.csv('IDHM - 2010 - municípios - Atlas Brasil.csv',header = T,sep = ';')
+idhm2010<-remove_empty(idhm2010,which = 'cols')
+idhm2010$município <- substr(idhm2010$município, start = 1, stop = nchar(idhm2010$município) - 5)
+# A partir do arquivo acima gere o banco de dados de nome ATLAS_UF com as seguintes variáveis:
+idhm2010$CODMUNRES<-cod2010$CODMUNRES
+idhm2010<-idhm2010[substr(as.character(idhm2010$CODMUNRES),1,2)=="50",]
+# 1  ANO    
+ATLAS_MS$ANO<-2015
+library(dplyr)
+ATLAS_MS<-ATLAS_MS %>%
+  relocate(ANO)
+# 2  NIVEL
+ATLAS_MS$NIVEL<-ifelse(ATLAS_MS$CODMUNRES==50, 'UF','MUNICIPIO')
+ATLAS_MS <- ATLAS_MS %>%
+  relocate(NIVEL, .after = ANO)
+# 3  CODMUNRES
+ATLAS_MS = data.frame(CODMUNRES=sort(unique(cod2010$CODMUNRES)))
+# 4 IDHM_A
+
+# 5 IDHM_CA
+ATLAS_MS$IDHM_CA<-idhm2010$IDHM_2010[
+  match(ATLAS_MS$CODMUNRES, idhm2010$CODMUNRES)
+]
+# 6 IDHM_CA_M
+# 7 IDHM_CA_F
+nova_linha <- ATLAS_MS[1, ]
+nova_linha[,] <- NA
+
+nova_linha$ANO <- 2015
+nova_linha$NIVEL <- "UF"
+nova_linha$CODMUNRES <- 50
+nova_linha$IDHM_A <- 0.74
+nova_linha$IDHM_CA <- 0.729
+nova_linha$IDHM_CA_M <- 0.700
+nova_linha$IDHM_CA_F <- 0.757
+
+colunas_faltando <- setdiff(names(nova_linha), names(ATLAS_MS))
+ATLAS_MS[colunas_faltando] <- NA
+
+ATLAS_MS <- ATLAS_MS[, names(nova_linha)]
+
+ATLAS_MS <- rbind(nova_linha, ATLAS_MS)
+
+ATLAS_MS <- ATLAS_MS[, c(
+  1:3,
+  which(names(ATLAS_MS) == "IDHM_A"),
+  setdiff(4:ncol(ATLAS_MS), which(names(ATLAS_MS) == "IDHM_A"))
+)]
+ATLAS_MS$IDHM_A[ATLAS_MS$NIVEL != "UF"] <- NA
+
+
+
+# Exporte o arquivo em formato CSV# Faça o commit com a mensagem "Script e dados TAREFA 3 - ATLAS"
+
+write.csv(ATLAS_MS,"ATLAS_MS",row.names = F)
 
 
 
