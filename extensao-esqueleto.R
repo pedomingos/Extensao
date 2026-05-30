@@ -1201,16 +1201,82 @@ write.csv(ATLAS_MS,"ATLAS_MS",row.names = F)
 # Exporte o arquivo em formato CSV# Faça o commit com a mensagem "Script e dados TAREFA 3 - ATLAS"
 
 
+################################################################
+# ETAPA 4: GERAR BANCO DE DADOS FINAL DO ESTADO COM DADOS DO SIDRA, ATLAS, SINASC, SIM, SINISA E INDICADORES
+################################################################
+
+
+# Tarefa 1: Fazer o merge dos bancos de dados criados nas etapas anteriores (SIDRA_UF, ATLAS_ UF,  SINASC_UF, SIM_UF e SINISA_UF), 
+# sendo que as variáveis deverão seguir a ordem
+
+# ANO, NIVEL, CODMUNRES (uma única vez), variáveis do SIDRA, do ATLAS, do SINASC, do SIM e da SINISA. No merge deve constar qualquer município que esteja em pelo menos um dos bancos
+# Chamar o banco de dados de DA_UF
+
+library(dplyr)
+library(purrr)
+
+SIDRA_MS  <- read.csv("SIDRA_MS.csv",  header = TRUE, sep = ",", stringsAsFactors = FALSE)
+ATLAS_MS  <- read.csv("ATLAS_MS",  header = TRUE, sep = ",", stringsAsFactors = FALSE)
+SINASC_MS <- read.csv("SINASC_MS.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+SIM_MS    <- read.csv("SIM_MS.csv",    header = TRUE, sep = ",", stringsAsFactors = FALSE)
+SINISA_MS <- read.csv("SINISA_MS", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+
+# Remover a coluna X, se existir
+SIDRA_MS  <- SIDRA_MS  %>% select(-any_of("X"))
+ATLAS_MS  <- ATLAS_MS  %>% select(-any_of("X"))
+SINASC_MS <- SINASC_MS %>% select(-any_of("X"))
+SIM_MS    <- SIM_MS    %>% select(-any_of("X"))
+SINISA_MS <- SINISA_MS %>% select(-any_of("X"))
+
+# Padronizar as chaves
+padronizar_chaves <- function(df) {
+  df %>%
+    mutate(
+      ANO = as.character(ANO),
+      NIVEL = as.character(NIVEL),
+      CODMUNRES = as.character(CODMUNRES)
+    ) %>%
+    mutate(
+      ANO = trimws(ANO),
+      NIVEL = trimws(NIVEL),
+      CODMUNRES = trimws(CODMUNRES)
+    )
+}
+
+SIDRA_MS  <- padronizar_chaves(SIDRA_MS)
+ATLAS_MS  <- padronizar_chaves(ATLAS_MS)
+SINASC_MS <- padronizar_chaves(SINASC_MS)
+SIM_MS    <- padronizar_chaves(SIM_MS)
+SINISA_MS <- padronizar_chaves(SINISA_MS)
+
+lista_bancos <- list(SIDRA_MS, ATLAS_MS, SINASC_MS, SIM_MS, SINISA_MS)
+
+DA_MS <- reduce(lista_bancos, full_join, by = c("ANO", "NIVEL", "CODMUNRES"))
+
+dim(DA_MS)
+names(DA_MS)
+
+
+sapply(lista_bancos, function(df) {
+  sapply(df[c("ANO", "NIVEL", "CODMUNRES")], class)
+})
 
 
 
-#####################################################################################################
-# ETAPA 4: GERAR BANCO DE DADOS FINAL DO ESTADO, BASEADO NAS ANÁLISES DE SINASC, SIM, IBGE, SNIS,...
-######################################################################################################
-# Só inicie esta Etapa quando a professora orientar
-# ESTANDO NA BRANCH SINASC, NÃO ALTERE NADA NO SCRIPT REFERENTE A ETAPA 4
 
-# Cada aluno gerar um dataframe de uma única linha (referente ao seu estado) com as variáveis na ordem indicada pela professora
+
+
+
+# Após o merge dos bancos, fazer commit “Script e dados agregados da UF”
+
+
+# Tarefa 2: Acrescentar no banco DA_UF os indicadores TFG, TMG, RMM, TMM, TMM_P, TMN, TMN_P, TMN_T e TMI e chamar o banco de BDEM_UF_2015
+
+# Após a criação do banco, fazer commit “Script e dados BDEM_UF_2015”
+
+# Exporte o arquivo em formato CSV
+# Faça o commit com a mensagem "Script e dados BDEM"
+
 
 
 
